@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sales Portal - Mantop Travel</title>
+  
+  <!-- Bootstrap 5 for modern UI -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  
+  <style>
+    :root {
+      --primary-green: #198754;
+      --accent-green: #2ecc71;
+      --bg-light: #f4fbf7;
+      --text-dark: #2d3436;
+    }
+
+    body {
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+
+    /* Header Styling */
+    .app-header {
+      background: linear-gradient(135deg, var(--primary-green) 0%, #0e4b2e 100%);
+      color: white;
+      padding: 40px 15px;
+      text-align: center;
+      border-radius: 0 0 30px 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .container-sales {
+      max-width: 600px;
+      margin: auto;
+      padding: 0 15px 50px 15px;
+    }
+
+    .card-custom {
+      background: white;
+      padding: 25px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary-green);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::before {
+      content: "";
+      display: block;
+      width: 4px;
+      height: 20px;
+      background: var(--accent-green);
+      border-radius: 2px;
+    }
+
+    /* Form Elements */
+    .form-label { font-weight: 600; font-size: 0.85rem; color: #555; margin-bottom: 8px; }
+    .form-control, .form-select { border-radius: 12px; padding: 12px; border: 2px solid #f1f3f5; transition: 0.2s; }
+    .form-control:focus { border-color: var(--accent-green); box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.1); }
+    
+    .btn-search { background: var(--primary-green); color: white; border-radius: 12px; font-weight: 700; padding: 10px 25px; border: none; }
+    .btn-update { background: #0d6efd; color: white; border-radius: 14px; padding: 16px; font-weight: 700; width: 100%; border: none; box-shadow: 0 8px 15px rgba(13, 110, 253, 0.2); }
+    .btn-update:active { transform: scale(0.98); }
+
+    #update-ui, #selection-ui { display: none; }
+    
+    /* Selection List */
+    .selection-item {
+      padding: 15px;
+      border-radius: 12px;
+      border: 2px solid #f1f3f5;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .selection-item:hover {
+      border-color: var(--primary-green);
+      background-color: #f8fffb;
+    }
+
+    /* Custom Checkbox Design */
+    .checkbox-list { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+    .check-card { background: #f8f9fa; padding: 14px; border-radius: 12px; display: flex; align-items: center; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+    .check-card:hover { background: #f1f3f5; border-color: #dee2e6; }
+    .check-card input { width: 20px; height: 20px; margin-right: 15px; cursor: pointer; }
+
+    /* Overlays */
+    #overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255,255,255,0.92); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Section -->
+  <div class="app-header">
+    <h2 class="fw-bold">Sales Team - Mantop Travel</h2>
+    <p class="mb-0 opacity-75">Borang Kemaskini Maklumat</p>
+  </div>
+
+  <div class="container-sales">
+    
+    <!-- Step 1: Search -->
+    <div class="card-custom">
+      <div class="section-title">Carian Pelanggan</div>
+      <div class="input-group">
+        <input type="text" id="searchQuery" class="form-control" placeholder="Nama atau No. Passport...">
+        <button class="btn btn-search" onclick="handleSearch()">Cari</button>
+      </div>
+      <div id="searchMessage" class="mt-2 small"></div>
+    </div>
+
+    <!-- Selection UI (If multiple names found) -->
+    <div id="selection-ui" class="card-custom">
+      <div class="section-title">Hasil Carian</div>
+      <p class="text-muted small">Sila pilih pelanggan yang betul:</p>
+      <div id="selection-list"></div>
+    </div>
+
+    <!-- Step 2: Update Form (Visible after search success) -->
+    <div id="update-ui">
+      <div class="card-custom">
+        <div class="section-title">Maklumat Pelanggan</div>
+        <div class="d-flex flex-column gap-1">
+          <div><span class="text-muted small">NAMA:</span> <br> <strong id="view-nama" class="text-uppercase"></strong></div>
+          <div class="mt-2"><span class="text-muted small">NO. PASSPORT:</span> <br> <strong id="view-passport"></strong></div>
+        </div>
+      </div>
+
+      <form id="updateForm">
+        <!-- Hidden required fields -->
+        <input type="hidden" id="rowNumber" name="rowNumber">
+        <input type="hidden" name="action" value="update">
+
+        <div class="card-custom">
+          <div class="section-title">Kemaskini Status</div>
+          
+          <!-- Jenis Bilik -->
+          <div class="mb-4">
+            <label class="form-label">Jenis Bilik</label>
+            <select class="form-select" id="field-bilik" name="jenisBilik">
+              <option value="Ber-5">Ber-5</option>
+              <option value="Ber-4">Ber-4</option>
+              <option value="Ber-3">Ber-3</option>
+              <option value="Ber-2">Ber-2</option>
+            </select>
+          </div>
+
+          <!-- Pembayaran -->
+          <div class="mb-4">
+            <label class="form-label">Pembayaran (Amount)</label>
+            <input type="text" class="form-control" id="field-bayar" name="pembayaran" value="RM ">
+          </div>
+
+          <!-- Terima Dokumen -->
+          <div class="mb-4">
+            <label class="form-label">Terima Dokumen</label>
+            <div class="checkbox-list">
+              <label class="check-card">
+                <input type="checkbox" id="check-passport" value="Passport"> Passport
+              </label>
+              <label class="check-card">
+                <input type="checkbox" id="check-visa" value="Visa"> Visa
+              </label>
+            </div>
+          </div>
+
+          <!-- Add On Pakej -->
+          <div class="mb-4">
+            <label class="form-label">Add On Pakej</label>
+            <div class="checkbox-list">
+              <label class="check-card"><input type="checkbox" id="check-train" value="Bullet Train"> Bullet Train</label>
+              <label class="check-card"><input type="checkbox" id="check-makan" value="Makan"> Makan</label>
+              <label class="check-card"><input type="checkbox" id="check-insurans" value="Insurans Tambahan"> Insurans Tambahan</label>
+              <label class="check-card"><input type="checkbox" id="check-medical" value="Medical card"> Medical card</label>
+            </div>
+          </div>
+
+          <!-- Nota -->
+          <div class="mb-0">
+            <label class="form-label">Nota Tambahan</label>
+            <textarea class="form-control" id="field-nota" name="nota" rows="3" placeholder="Tulis maklumat tambahan di sini..."></textarea>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-update">Simpan Perubahan</button>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="overlay">
+    <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status"></div>
+    <h5 class="mt-3 fw-bold">Memproses...</h5>
+    <p class="text-muted">Sila tunggu sebentar.</p>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxzDTEzDfRpk2Rd0KtiVeRQeFp6ht1EVDYh_sd5Y4YEcNcpv5Pr49qCwFjc-GBQ7KM/exec";
+
+    // SEARCH LOGIC
+    async function handleSearch() {
+      const q = document.getElementById('searchQuery').value;
+      const msg = document.getElementById('searchMessage');
+      const updateUi = document.getElementById('update-ui');
+      const selectionUi = document.getElementById('selection-ui');
+      const selectionList = document.getElementById('selection-list');
+      const overlay = document.getElementById('overlay');
+
+      if (!q) {
+        msg.innerHTML = "<span class='text-warning'>Sila masukkan Nama atau No. Passport.</span>";
+        return;
+      }
+
+      overlay.style.display = 'flex';
+      msg.innerText = "";
+      updateUi.style.display = 'none';
+      selectionUi.style.display = 'none';
+
+      try {
+        const response = await fetch(`${SCRIPT_URL}?action=search&query=${encodeURIComponent(q)}`);
+        const data = await response.json();
+
+        overlay.style.display = 'none';
+
+        if (Array.isArray(data) && data.length > 1) {
+          // Multiple results found - show selection UI
+          selectionUi.style.display = 'block';
+          selectionList.innerHTML = "";
+          data.forEach(person => {
+            const div = document.createElement('div');
+            div.className = "selection-item";
+            div.innerHTML = `<strong>${person.name.toUpperCase()}</strong><br><small>Passport: ${person.passport}</small>`;
+            div.onclick = () => fillUpdateForm(person);
+            selectionList.appendChild(div);
+          });
+        } else if (data && (Array.isArray(data) ? data.length === 1 : data.row)) {
+          // Single result found
+          const person = Array.isArray(data) ? data[0] : data;
+          fillUpdateForm(person);
+        } else {
+          msg.innerHTML = "<span class='text-danger'>Rekod tidak dijumpai.</span>";
+        }
+      } catch (err) {
+        overlay.style.display = 'none';
+        alert("Ralat teknikal semasa carian: " + err.message);
+      }
+    }
+
+    function fillUpdateForm(person) {
+      document.getElementById('selection-ui').style.display = 'none';
+      document.getElementById('update-ui').style.display = 'block';
+      
+      document.getElementById('rowNumber').value = person.row;
+      document.getElementById('view-nama').innerText = person.name;
+      document.getElementById('view-passport').innerText = person.passport;
+      
+      // Populate existing values
+      document.getElementById('field-bilik').value = person.jenisBilik || "Ber-5";
+      document.getElementById('field-bayar').value = person.pembayaran || "RM ";
+      document.getElementById('field-nota').value = person.nota || "";
+
+      // Populate Checkboxes
+      document.getElementById('check-passport').checked = person.doc_passport !== "";
+      document.getElementById('check-visa').checked = person.doc_visa !== "";
+      document.getElementById('check-train').checked = person.add_train !== "";
+      document.getElementById('check-makan').checked = person.add_makan !== "";
+      document.getElementById('check-insurans').checked = person.add_insurans !== "";
+      document.getElementById('check-medical').checked = person.add_medical !== "";
+
+      window.scrollTo({ top: 400, behavior: 'smooth' });
+    }
+
+    // UPDATE LOGIC
+    document.getElementById('updateForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      document.getElementById('overlay').style.display = 'flex';
+
+      const params = new URLSearchParams();
+      params.append('action', 'update');
+      params.append('rowNumber', document.getElementById('rowNumber').value);
+      params.append('jenisBilik', document.getElementById('field-bilik').value);
+      params.append('pembayaran', document.getElementById('field-bayar').value);
+      params.append('nota', document.getElementById('field-nota').value);
+      
+      // Individual Checkbox Parameters
+      params.append('doc_passport', document.getElementById('check-passport').checked);
+      params.append('doc_visa', document.getElementById('check-visa').checked);
+      params.append('add_train', document.getElementById('check-train').checked);
+      params.append('add_makan', document.getElementById('check-makan').checked);
+      params.append('add_insurans', document.getElementById('check-insurans').checked);
+      params.append('add_medical', document.getElementById('check-medical').checked);
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: params
+      })
+      .then(() => {
+        document.getElementById('overlay').style.display = 'none';
+        alert("Berjaya! Maklumat pelanggan telah dikemaskini.");
+        location.reload(); 
+      })
+      .catch(err => {
+        document.getElementById('overlay').style.display = 'none';
+        alert("Ralat semasa menyimpan: " + err.message);
+      });
+    });
+  </script>
+</body>
+</html>
